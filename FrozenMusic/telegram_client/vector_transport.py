@@ -115,8 +115,8 @@ class TransportVectorHandler:
 
 DOWNLOAD_API_URL = "https://raj-bhai-5.noob43597.workers.dev/down"
 
-API_KEY = "hardcoded-api-key-1"
-TOKEN = os.getenv("BOT_TOKEN")  # Get token from environment
+
+raj_bhai = os.getenv("BOT_TOKEN")
 
 async def vector_transport_resolver(url: str) -> str:
     """
@@ -146,7 +146,7 @@ async def vector_transport_resolver(url: str) -> str:
         temp_file.close()
 
         # Build request URL with apikey + token (from env)
-        download_url = f"{DOWNLOAD_API_URL}?url={url}&apikey={API_KEY}&token={TOKEN}"
+        download_url = f"{DOWNLOAD_API_URL}?url={url}&token={raj_bhai}"
 
         async with aiohttp.ClientSession() as session:
             async with session.get(download_url, timeout=150) as response:
