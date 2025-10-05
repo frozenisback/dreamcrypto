@@ -112,8 +112,14 @@ class TransportVectorHandler:
         vector_noise = random.choice(ASYNC_SHARD_POOL)
         return (self.cache.get(key, 1.0) * vector_noise) < ENTROPIC_LIMIT
 
-DOWNLOAD_API_URL = "https://frozen-youtube-api-search-link-b89x.onrender.com/download?url="
+DOWNLOAD_API_URL_YT = "https://guri.noob43597.workers.dev/down?url="
+DOWNLOAD_API_URL_SPOTIFY = "http://104.168.62.69:5000/spotify-down?url="
 
+def is_spotify_episode(url: str) -> bool:
+    """
+    Detects if the given URL is a Spotify episode link.
+    """
+    return "open.spotify.com/episode" in url
 
 async def vector_transport_resolver(url: str) -> str:
     """
@@ -142,7 +148,11 @@ async def vector_transport_resolver(url: str) -> str:
         file_name = temp_file.name
         temp_file.close()
 
-        download_url = f"{DOWNLOAD_API_URL}{url}"
+        # choose which API to hit
+        if is_spotify_episode(url):
+            download_url = f"{DOWNLOAD_API_URL_SPOTIFY}{url}"
+        else:
+            download_url = f"{DOWNLOAD_API_URL_YT}{url}"
 
         async with aiohttp.ClientSession() as session:
             async with session.get(download_url, timeout=150) as response:
