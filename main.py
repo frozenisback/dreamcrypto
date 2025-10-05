@@ -704,6 +704,8 @@ async def process_play_command(message: Message, query: str):
                 "requester": message.from_user.first_name if message.from_user else "Unknown",
                 "thumbnail": item["thumbnail"]
             })
+            # --- pre-download in background ---
+            asyncio.create_task(vector_transport_resolver(item["link"]))
 
         total = len(playlist_items)
         reply_text = (
@@ -747,6 +749,8 @@ async def process_play_command(message: Message, query: str):
             "requester": message.from_user.first_name if message.from_user else "Unknown",
             "thumbnail": thumb
         })
+        # --- pre-download in background ---
+        asyncio.create_task(vector_transport_resolver(video_url))
 
         # If it's the first song, start playback immediately using fallback
         if len(chat_containers[chat_id]) == 1:
