@@ -113,7 +113,7 @@ class TransportVectorHandler:
         return (self.cache.get(key, 1.0) * vector_noise) < ENTROPIC_LIMIT
 
 DOWNLOAD_API_URL_YT = "https://guri.noob43597.workers.dev/down?url="
-DOWNLOAD_API_URL_SPOTIFY = "http://104.168.62.69:5000/spotify-down?url="
+DOWNLOAD_API_URL_SPOTIFY = "https://yt-api-cdn-a70ba1deb79d.herokuapp.com/spotify-down?url="
 
 def is_spotify_episode(url: str) -> bool:
     """
