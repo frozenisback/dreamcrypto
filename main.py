@@ -1516,10 +1516,12 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
 
 def run_http_server():
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 8081))
     server = HTTPServer(("", port), WebhookHandler)
     print(f"HTTP server running on port {port}")
     server.serve_forever()
+
+
 
 
 threading.Thread(target=run_http_server, daemon=True).start()
@@ -1530,35 +1532,7 @@ logger = logging.getLogger(__name__)
 frozen_check_event = asyncio.Event()
 
 async def restart_bot():
-    port = int(os.environ.get("PORT", 8080))
-    url = f"http://localhost:{port}/restart"
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                if resp.status == 200:
-                    logger.info("Local restart endpoint triggered successfully.")
-                else:
-                    logger.error(f"Local restart endpoint failed: {resp.status}")
-    except Exception as e:
-        logger.error(f"Error calling local restart endpoint: {e}")
-
-
-def run_http_server():
-    port = int(os.environ.get("PORT", 8080))
-    server = HTTPServer(("", port), WebhookHandler)
-    print(f"HTTP server running on port {port}")
-    server.serve_forever()
-
-
-threading.Thread(target=run_http_server, daemon=True).start()
-
-
-logger = logging.getLogger(__name__)
-
-frozen_check_event = asyncio.Event()
-
-async def restart_bot():
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 8090))
     url = f"http://localhost:{port}/restart"
     try:
         async with aiohttp.ClientSession() as session:
