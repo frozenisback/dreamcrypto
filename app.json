@@ -42,10 +42,6 @@
       "required": false
     }
   },
-  "buildpacks": [],
-      
-    }
-  ]
+  "buildpacks": []
 }
-
 
