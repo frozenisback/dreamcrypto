@@ -1526,59 +1526,6 @@ def run_http_server():
 
 threading.Thread(target=run_http_server, daemon=True).start()
 
-
-logger = logging.getLogger(__name__)
-
-frozen_check_event = asyncio.Event()
-
-async def restart_bot():
-    port = int(os.environ.get("PORT", 8090))
-    url = f"http://localhost:{port}/restart"
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                if resp.status == 200:
-                    logger.info("Local restart endpoint triggered successfully.")
-                else:
-                    logger.error(f"Local restart endpoint failed: {resp.status}")
-    except Exception as e:
-        logger.error(f"Error calling local restart endpoint: {e}")
-
-async def frozen_check_loop(bot_username: str):
-    while True:
-        try:
-            # 1) send the check command
-            await assistant.send_message(bot_username, "/frozen_check")
-            logger.info(f"Sent /frozen_check to @{bot_username}")
-
-            # 2) poll for a reply for up to 30 seconds
-            deadline = time.time() + 30
-            got_ok = False
-
-            while time.time() < deadline:
-                async for msg in assistant.get_chat_history(bot_username, limit=1):
-                    text = msg.text or ""
-                    if "frozen check successful ✨" in text.lower():
-                        got_ok = True
-                        logger.info("Received frozen check confirmation.")
-                        break
-                if got_ok:
-                    break
-                await asyncio.sleep(3)
-
-            # 3) if no confirmation, restart
-            if not got_ok:
-                logger.warning("No frozen check reply—restarting bot.")
-                await restart_bot()
-
-        except Exception as e:
-            logger.error(f"Error in frozen_check_loop: {e}")
-
-        await asyncio.sleep(60)
-
-
-
-
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
@@ -1606,9 +1553,6 @@ if __name__ == "__main__":
     logger.info(f"✅ Bot Username: {BOT_USERNAME}")
     logger.info(f"✅ Bot Link: {BOT_LINK}")
 
-    # start the frozen‑check loop (no handler registration needed)
-    asyncio.get_event_loop().create_task(frozen_check_loop(BOT_USERNAME))
-
     if not assistant.is_connected:
         logger.info("Assistant not connected; starting assistant client...")
         assistant.run()
@@ -1633,6 +1577,7 @@ if __name__ == "__main__":
     bot.stop()
     logger.info("Bot stopped.")
     logger.info("✅ All services are up and running. Bot started successfully.")
+
 
 
 
