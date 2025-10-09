@@ -1524,7 +1524,7 @@ if __name__ == "__main__":
 
     if not assistant.is_connected:
         logger.info("Assistant not connected; starting assistant client...")
-        assistant.run()
+        assistant.start()
         logger.info("Assistant client connected.")
 
     try:
