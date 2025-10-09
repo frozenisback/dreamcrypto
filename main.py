@@ -1455,78 +1455,24 @@ def load_state_from_db():
 
 
 
-def ping_google():
-    """Ping Google DNS (8.8.8.8) and return True if reachable."""
-    try:
-        # Ping once, timeout 1 second
-        result = subprocess.run(
-            ["ping", "-c", "1", "-W", "1", "8.8.8.8"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        return result.returncode == 0
-    except Exception:
-        return False
-
-class WebhookHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == "/":
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"Bot is running!")
-        elif self.path == "/status":
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"Bot status: Running")
-        elif self.path == "/restart":
-            save_state_to_db()
-            os.execl(sys.executable, sys.executable, *sys.argv)
-        elif self.path == "/ping":
-            # Calculate uptime
-            current_time = time.time()
-            uptime_seconds = int(current_time - bot_start_time)
-            uptime_str = str(timedelta(seconds=uptime_seconds))
-
-            # Ping Google DNS
-            google_reachable = ping_google()
-            google_status = "reachable ✅" if google_reachable else "unreachable ❌"
-
-            self.send_response(200)
-            self.end_headers()
-            response = f"Uptime: {uptime_str}\nGoogle DNS: {google_status}".encode()
-            self.wfile.write(response)
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-    def do_POST(self):
-        if self.path == "/webhook":
-            try:
-                length = int(self.headers.get("Content-Length", 0))
-                body = self.rfile.read(length)
-                update = json.loads(body)
-                bot._process_update(update)
-            except Exception as e:
-                print("Error processing update:", e)
-            self.send_response(200)
-            self.end_headers()
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-
-def run_http_server():
-    port = int(os.environ.get("PORT", 8081))
-    server = HTTPServer(("", port), WebhookHandler)
-    print(f"HTTP server running on port {port}")
-    server.serve_forever()
-
-
-
-
-threading.Thread(target=run_http_server, daemon=True).start()
-
 logger = logging.getLogger(__name__)
+
+async def watchdog():
+    while True:
+        try:
+            await bot.get_me()  # ping Telegram
+        except Exception as e:
+            logger.warning(f"[WATCHDOG] Connection lost: {e}")
+            try:
+                await bot.stop()
+            except Exception as inner_e:
+                logger.warning(f"[WATCHDOG] bot.stop() failed or already stopped: {inner_e}")
+            try:
+                await bot.start()
+                logger.info("[WATCHDOG] Bot restarted successfully.")
+            except Exception as start_e:
+                logger.error(f"[WATCHDOG] Restart failed: {start_e}")
+        await asyncio.sleep(300)  # check every 5 minutes
 
 if __name__ == "__main__":
     logger.info("Loading persisted state from MongoDB...")
@@ -1571,13 +1517,19 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"❌ Failed to fetch assistant info: {e}")
 
+    logger.info("→ Starting watchdog task")
+    asyncio.get_event_loop().create_task(watchdog())  # start self-healing watchdog
+
     logger.info("→ Entering idle() (long-polling)")
-    idle()
+    idle()  # keep the bot alive
 
-    bot.stop()
-    logger.info("Bot stopped.")
+    try:
+        bot.stop()
+        logger.info("Bot stopped.")
+    except Exception as e:
+        logger.warning(f"Bot stop failed or already stopped: {e}")
+
     logger.info("✅ All services are up and running. Bot started successfully.")
-
 
 
 
