@@ -1457,23 +1457,45 @@ def load_state_from_db():
 
 logger = logging.getLogger(__name__)
 
-async def watchdog():
-    while True:
-        try:
-            await bot.get_me()  # ping Telegram
-        except Exception as e:
-            logger.warning(f"[WATCHDOG] Connection lost: {e}")
-            try:
-                await bot.stop()
-            except Exception as inner_e:
-                logger.warning(f"[WATCHDOG] bot.stop() failed or already stopped: {inner_e}")
-            try:
-                await bot.start()
-                logger.info("[WATCHDOG] Bot restarted successfully.")
-            except Exception as start_e:
-                logger.error(f"[WATCHDOG] Restart failed: {start_e}")
-        await asyncio.sleep(300)  # check every 5 minutes
+RESTART_CHANNEL_ID = -1001234567890  # Replace with your channel/chat ID
 
+async def heartbeat():
+    while True:
+        await asyncio.sleep(2.5 * 3600)  # every 2.5 hours
+        try:
+            logger.info("💤 Heartbeat: restarting bot to prevent MTProto freeze...")
+
+            pre_msg = None
+            post_msg = None
+
+            # Notify channel before restart
+            try:
+                pre_msg = await bot.send_message(RESTART_CHANNEL_ID, "⚡ Bot is restarting (scheduled heartbeat)")
+            except Exception as e:
+                logger.warning(f"Failed to notify channel about restart: {e}")
+
+            # Restart the MTProto client
+            await bot.restart()
+            logger.info("✅ Bot restarted successfully via heartbeat")
+
+            # Notify channel after restart
+            try:
+                post_msg = await bot.send_message(RESTART_CHANNEL_ID, "✅ Bot restarted successfully!")
+            except Exception as e:
+                logger.warning(f"Failed to notify channel after restart: {e}")
+
+            # Delete the messages if sent
+            for msg in [pre_msg, post_msg]:
+                if msg:
+                    try:
+                        await msg.delete()
+                    except Exception as e:
+                        logger.warning(f"Failed to delete heartbeat message: {e}")
+
+        except Exception as e:
+            logger.error(f"❌ Heartbeat restart failed: {e}")
+
+# ─── Main Entry ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     logger.info("Loading persisted state from MongoDB...")
     load_state_from_db()
@@ -1486,6 +1508,7 @@ if __name__ == "__main__":
     logger.info("→ Starting Telegram bot client (bot.start)...")
     try:
         bot.start()
+        logger.info("Telegram bot has started.")
     except Exception as e:
         logger.error(f"❌ Failed to start Pyrogram client: {e}")
         sys.exit(1)
@@ -1517,8 +1540,9 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"❌ Failed to fetch assistant info: {e}")
 
-    logger.info("→ Starting watchdog task")
-    asyncio.get_event_loop().create_task(watchdog())  # start self-healing watchdog
+    # Start the heartbeat task
+    logger.info("→ Starting heartbeat task (auto-restart every 2.5 hours)")
+    asyncio.get_event_loop().create_task(heartbeat())
 
     logger.info("→ Entering idle() (long-polling)")
     idle()  # keep the bot alive
