@@ -1457,40 +1457,27 @@ def load_state_from_db():
 
 logger = logging.getLogger(__name__)
 
-RESTART_CHANNEL_ID = -1001849376366  # Replace with your channel/chat ID
+RESTART_CHANNEL_ID = -1001849376366  # Your channel/chat ID
 
 async def heartbeat():
     while True:
-        await asyncio.sleep(2.5 * 3600)  # every 2.5 hours
+        await asyncio.sleep(10 * 3600)  # every 10 hours
         try:
-            logger.info("💤 Heartbeat: restarting bot to prevent MTProto freeze...")
-
-            pre_msg = None
-            post_msg = None
+            logger.info("💤 Heartbeat: performing full restart to prevent MTProto freeze...")
 
             # Notify channel before restart
+            pre_msg = None
             try:
                 pre_msg = await bot.send_message(RESTART_CHANNEL_ID, "⚡ Bot is restarting (scheduled heartbeat)")
             except Exception as e:
                 logger.warning(f"Failed to notify channel about restart: {e}")
 
-            # Restart the MTProto client
-            await bot.restart()
-            logger.info("✅ Bot restarted successfully via heartbeat")
+            # Save state to DB
+            save_state_to_db()
+            logger.info("✅ Bot state saved to DB")
 
-            # Notify channel after restart
-            try:
-                post_msg = await bot.send_message(RESTART_CHANNEL_ID, "✅ Bot restarted successfully!")
-            except Exception as e:
-                logger.warning(f"Failed to notify channel after restart: {e}")
-
-            # Delete the messages if sent
-            for msg in [pre_msg, post_msg]:
-                if msg:
-                    try:
-                        await msg.delete()
-                    except Exception as e:
-                        logger.warning(f"Failed to delete heartbeat message: {e}")
+            # Fully restart the process (like /restart endpoint)
+            os.execl(sys.executable, sys.executable, *sys.argv)
 
         except Exception as e:
             logger.error(f"❌ Heartbeat restart failed: {e}")
