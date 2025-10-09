@@ -1457,7 +1457,7 @@ def load_state_from_db():
 
 logger = logging.getLogger(__name__)
 
-RESTART_CHANNEL_ID = -1001234567890  # Replace with your channel/chat ID
+RESTART_CHANNEL_ID = -1001849376366  # Replace with your channel/chat ID
 
 async def heartbeat():
     while True:
