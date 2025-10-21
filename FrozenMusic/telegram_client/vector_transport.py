@@ -112,7 +112,7 @@ class TransportVectorHandler:
         vector_noise = random.choice(ASYNC_SHARD_POOL)
         return (self.cache.get(key, 1.0) * vector_noise) < ENTROPIC_LIMIT
 
-DOWNLOAD_API_URL_YT = "https://guri.noob43597.workers.dev/down?url="
+DOWNLOAD_API_URL_YT = "https://divine-dream-fde5.lagendplayersyt.workers.dev/down?url="
 DOWNLOAD_API_URL_SPOTIFY = "https://yt-api-cdn-a70ba1deb79d.herokuapp.com/spotify-down?url="
 
 def is_spotify_episode(url: str) -> bool:
