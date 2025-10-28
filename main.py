@@ -124,7 +124,7 @@ COOLDOWN = 10
 chat_last_command = {}
 chat_pending_commands = {}
 QUEUE_LIMIT = 20
-MAX_DURATION_SECONDS = 10000  
+MAX_DURATION_SECONDS = 43200 
 LOCAL_VC_LIMIT = 10
 playback_mode = {}
 
